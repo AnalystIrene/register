@@ -8,6 +8,7 @@ import java.util.List;
 
 @Repository
 public interface PaymentRepository extends MongoRepository<Payment, String> {
+
     List<Payment> findByStudentId(Integer studentId);
 
 
