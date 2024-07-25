@@ -6,17 +6,26 @@ import com.registerapi.register.model.RegistrationInfo;
 import com.registerapi.register.repository.CourseRepository;
 import com.registerapi.register.repository.Studentsrepo;
 import com.registerapi.register.repository.RegistrationInfoRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+//import javax.validation.Valid;
+
 @RestController
 @RequestMapping(path = "api/v1/admin")
-
+@Validated
 public class Maincontroller {
     private static final Logger logger = LoggerFactory.getLogger(Maincontroller.class);
 
@@ -31,7 +40,7 @@ public class Maincontroller {
 
     // Student Management Endpoints
     @PostMapping("/addstudents")
-    public ResponseEntity<String> addStudent(@RequestBody Student student) {
+    public ResponseEntity<String> addStudent(@Valid @RequestBody Student student) {
         logger.info("Received request to add student: {}", student);
         try {
             studentRepository.save(student);
@@ -44,7 +53,7 @@ public class Maincontroller {
     }
 
     @PutMapping("/students")
-    public ResponseEntity<String> updateStudent(@RequestBody Student student) {
+    public ResponseEntity<String> updateStudent(@Valid @RequestBody Student student) {
         logger.info("Received request to update student: {}", student);
         Student existingStudent = studentRepository.findById(student.getRegno()).orElse(null);
         if (existingStudent != null) {
@@ -58,9 +67,7 @@ public class Maincontroller {
         }
     }
 
-
     @DeleteMapping("/students/{id}")
-
     public ResponseEntity<String> deleteStudent(@PathVariable Integer id) {
         logger.info("Received request to delete student with ID: {}", id);
         try {
@@ -72,7 +79,6 @@ public class Maincontroller {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting student.");
         }
     }
-
 
     @GetMapping("/students/{id}")
     public ResponseEntity<Student> getStudent(@PathVariable Integer id) {
@@ -94,7 +100,7 @@ public class Maincontroller {
 
     // Course Management Endpoints
     @PostMapping("/courses")
-    public ResponseEntity<String> addCourse(@RequestBody Course course) {
+    public ResponseEntity<String> addCourse(@Valid @RequestBody Course course) {
         logger.info("Received request to add course: {}", course);
         try {
             courseRepository.save(course);
@@ -107,7 +113,7 @@ public class Maincontroller {
     }
 
     @PutMapping("/courses")
-    public ResponseEntity<String> updateCourse(@RequestBody Course course) {
+    public ResponseEntity<String> updateCourse(@Valid @RequestBody Course course) {
         logger.info("Received request to update course: {}", course);
         Course existingCourse = courseRepository.findById(course.getId()).orElse(null);
         if (existingCourse != null) {
@@ -170,67 +176,16 @@ public class Maincontroller {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .collect(Collectors.toMap(
+                        error -> error.getField(),
+                        error -> error.getDefaultMessage()
+                ));
+        return ResponseEntity.badRequest().body(errors);
+    }
 }
-
-
-
-/*@RestController//for declaring our API methods
-@RequestMapping(path = "api/v1/students")
-public class Maincontroller {
-    private static final Logger logger = LoggerFactory.getLogger(Maincontroller.class);
-
-    @Autowired
-    private Studentsrepo studentrepo;//saving the variable student in the object of the student repo
-
-    //model name students 4 type we are declaring variable object student,
-    //coz we are mapping the jeson data to the data in the model student that also has 3
-    //function that doesnot return anything,
-
-    @PostMapping("/addstudents")
-    public void addstudents(@RequestBody Student student) {
-
-        logger.info("Received request to add student: {}", student);
-        studentrepo.save(student);
-        logger.info("Student saved successfully.");
-    }
-    //Get function,it is not void since it returns a list of students
-    @GetMapping("/getstudents/{id}")
-    public Student getstudents(@PathVariable Integer id) {
-        logger.info("Received request to fetch student with ID: {}", id);
-        return studentrepo.findById(id).orElse(null);
-    }
-
-    @GetMapping("/fetchstudents")
-    public List<Student> fetchstudents() {
-        logger.info("Received request to fetch all students.");
-        return studentrepo.findAll();
-    }
-
-    @PutMapping("/updatestudents")//posting data in our mongo db campass
-    public void upadtestudents(@RequestBody Student student) {
-        logger.info("Received request to update student: {}", student);
-        Student data = studentrepo.findById(student.getRegno()).orElse(null);
-        if (data != null) {
-            data.setName(student.getName());
-            data.setAddress(student.getAddress());
-            studentrepo.save(student);
-            logger.info("Student updated successfully.");
-        }
-    }
-
-    @DeleteMapping("/deletestudents")//deleting data from our mongo db campass
-    public void deletestudents(@PathVariable Integer id) {
-        //saving the variable student in the object of the student repo
-        studentrepo.deleteById(id);
-}*/
-
-
-
-
-
-
-
-
-
-
-
